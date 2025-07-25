@@ -17,8 +17,6 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
 
       - "--log.level=INFO"
-
-      - "--entrypoints.minecraft.transport.tls=true"
     ports:
       - "80:80"
       - "443:443"
