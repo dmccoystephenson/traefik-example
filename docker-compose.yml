@@ -7,24 +7,50 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.minecraft.address=:25565"
+
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+
       - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+
       - "--log.level=INFO"
+
+      - "--entrypoints.minecraft.transport.tls=true"
     ports:
       - "80:80"
       - "443:443"
+      - "25565:25565"
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
-  webapp:
+  dansplugins:
     image: nginx:alpine
-    container_name: webapp
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.webapp.rule=Host(`dansplugins.com`)"
-      - "traefik.http.routers.webapp.entrypoints=websecure"
-      - "traefik.http.routers.webapp.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dansplugins.rule=Host(`dansplugins.com`)"
+      - "traefik.http.routers.dansplugins.entrypoints=web,websecure"
+      - "traefik.http.routers.dansplugins.tls.certresolver=letsencrypt"
+
+  preponderous:
+    image: nginx:alpine
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.preponderous.rule=Host(`preponderous.org`)"
+      - "traefik.http.routers.preponderous.entrypoints=web,websecure"
+      - "traefik.http.routers.preponderous.tls.certresolver=letsencrypt"
+
+  mc:
+    image: itzg/minecraft-server
+    container_name: minecraft
+    environment:
+      EULA: "TRUE"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.mc.rule=HostSNI(`mc.dansplugins.com`)"
+      - "traefik.tcp.routers.mc.entrypoints=minecraft"
+      - "traefik.tcp.routers.mc.tls.certresolver=letsencrypt"
+      - "traefik.tcp.services.mc.loadbalancer.server.port=25565"
